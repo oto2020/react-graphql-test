@@ -1,15 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
-import { FindProductByTitleDocument } from './generated/graphql.tsx';
-
-
+import { FIND_PRODUCT_BY_TITLE } from './graphql/productQueries.tsx'; // Убедитесь, что путь указан верно
 
 function App() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [term, setSearchTerm] = useState('');
+  const [debouncedTerm, setDebouncedTerm] = useState('');
 
-  const { data, loading, error } = useQuery(FindProductByTitleDocument, {
-    variables: { searchTerm },
-    skip: searchTerm.length < 3 // Пропускаем запрос, если поисковый запрос меньше 3 символов
+  // Обновление debouncedTerm после задержки ввода
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedTerm(term);
+    }, 500);  // Задержка 500 мс
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [term]);
+
+  // Запрос к GraphQL серверу
+  const { data, loading, error } = useQuery(FIND_PRODUCT_BY_TITLE, {
+    variables: { term: debouncedTerm },
+    skip: debouncedTerm.length < 3
   });
 
   if (loading) return <p>Loading...</p>;
@@ -19,7 +30,7 @@ function App() {
     <div>
       <input
         type="text"
-        value={searchTerm}
+        value={term}
         onChange={(e) => setSearchTerm(e.target.value)}
         placeholder="Search for a product"
       />
@@ -27,6 +38,7 @@ function App() {
         {data?.products.map(product => (
           <li key={product.id}>
             {product.name} - Category ID: {product.categoryId}
+            {/* Добавьте здесь дополнительные детали по мере необходимости */}
           </li>
         ))}
       </ul>
