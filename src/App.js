@@ -1,23 +1,35 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import { useQuery } from '@apollo/client';
+import { FindProductByTitleDocument } from './generated/graphql.tsx';
+
+
 
 function App() {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const { data, loading, error } = useQuery(FindProductByTitleDocument, {
+    variables: { searchTerm },
+    skip: searchTerm.length < 3 // Пропускаем запрос, если поисковый запрос меньше 3 символов
+  });
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error.message}</p>;
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <input
+        type="text"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Search for a product"
+      />
+      <ul>
+        {data?.products.map(product => (
+          <li key={product.id}>
+            {product.name} - Category ID: {product.categoryId}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
